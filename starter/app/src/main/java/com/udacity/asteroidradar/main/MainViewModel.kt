@@ -2,17 +2,15 @@ package com.udacity.asteroidradar.main
 
 import android.app.Application
 import androidx.lifecycle.*
-import com.udacity.asteroidradar.api.parseAsteroidsJsonResult
+import com.udacity.asteroidradar.common.Constants
 import com.udacity.asteroidradar.database.AsteroidDatabaseDao
 import com.udacity.asteroidradar.domain.Asteroid
 import com.udacity.asteroidradar.domain.PictureOfDay
 import com.udacity.asteroidradar.repository.AsteroidRadarRepository
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONException
-import org.json.JSONObject
 import java.lang.IllegalArgumentException
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainViewModel(
     val application: Application,
@@ -21,21 +19,49 @@ class MainViewModel(
 
     private val repository = AsteroidRadarRepository(dao)
 
-    val asteroids: LiveData<List<Asteroid>> = repository.asteroids
+    enum class ApiStatus {
+        LOADING,
+        SUCCESS,
+        ERROR
+    }
 
-    private val _pictureOfDay = MutableLiveData<PictureOfDay>()
-    val pictureOfDay: LiveData<PictureOfDay> = _pictureOfDay
+    private val _apiStatus = MutableLiveData<ApiStatus>()
+    val apiStatus: LiveData<ApiStatus> = _apiStatus
+
+    val asteroids: LiveData<List<Asteroid>> =
+        repository.getAsteroidsFromLocal(getTodayDate(), getEndDate())
 
     fun fetchAsteroids() {
+        updateApiStatus(ApiStatus.LOADING)
         viewModelScope.launch {
-            repository.getAsteroids("2021-06-05", "2021-06-12")
+            repository.getAsteroids(getTodayDate(), getEndDate()) {
+                updateApiStatus(ApiStatus.ERROR)
+            }
         }
     }
 
+    private fun getTodayDate(): String {
+        val currentTime = Calendar.getInstance().time
+        val format = SimpleDateFormat(Constants.API_QUERY_DATE_FORMAT, Locale.getDefault())
+        return format.format(currentTime)
+    }
+
+    private fun getEndDate(): String {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, Constants.DEFAULT_END_DATE_DAYS)
+        val format = SimpleDateFormat(Constants.API_QUERY_DATE_FORMAT, Locale.getDefault())
+        return format.format(calendar.time)
+
+    }
+
+    fun updateApiStatus(apiStatus: ApiStatus) {
+        _apiStatus.postValue(apiStatus)
+    }
+
+    val pictureOfDay: LiveData<PictureOfDay> = repository.getPictureOfDayFromLocal()
     fun fetchPhotoOfDay() {
         viewModelScope.launch {
-            val pictureOfDay = repository.getPhotoOfDay().await()
-            _pictureOfDay.value = pictureOfDay
+            repository.getPictureOfDay()
         }
     }
 

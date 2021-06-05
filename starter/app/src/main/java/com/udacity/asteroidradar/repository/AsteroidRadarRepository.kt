@@ -10,7 +10,6 @@ import com.udacity.asteroidradar.database.asDatabaseModel
 import com.udacity.asteroidradar.database.asDomainModel
 import com.udacity.asteroidradar.domain.Asteroid
 import com.udacity.asteroidradar.domain.PictureOfDay
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -18,11 +17,13 @@ import java.lang.Exception
 
 class AsteroidRadarRepository(private val asteroidDao: AsteroidDatabaseDao) {
 
-    val asteroids: LiveData<List<Asteroid>> = Transformations.map(asteroidDao.getAllAsteroids()) {
-        it.asDomainModel()
+    fun getAsteroidsFromLocal(startDate: String, endDate: String): LiveData<List<Asteroid>> {
+        return Transformations.map(asteroidDao.getAllAsteroids()) {
+            it.asDomainModel()
+        }
     }
 
-    suspend fun getAsteroids(startDate: String, endDate: String) {
+    suspend fun getAsteroids(startDate: String, endDate: String, onError: (ex: Exception) -> Unit) {
         withContext(Dispatchers.IO) {
             try {
                 val resultString = Network.networkService.getAsteroidsAsync(
@@ -36,11 +37,29 @@ class AsteroidRadarRepository(private val asteroidDao: AsteroidDatabaseDao) {
                 asteroidDao.insertAll(itemEntities)
             } catch (ex: Exception) {
                 ex.printStackTrace()
+                return@withContext onError(ex)
             }
         }
     }
 
-    fun getPhotoOfDay(): Deferred<PictureOfDay> {
-        return Network.networkService.getAsteroidImagesAsync(BuildConfig.API_KEY)
+    fun getPictureOfDayFromLocal(): LiveData<PictureOfDay> {
+        return Transformations.map(asteroidDao.getPictureOfDay()) { entity ->
+            entity?.let {
+                it.asDomainModel()
+            }
+        }
+    }
+
+    suspend fun getPictureOfDay() {
+        withContext(Dispatchers.IO) {
+            try {
+                val pictureOfDay =
+                    Network.networkService.getAsteroidImagesAsync(BuildConfig.API_KEY).await()
+                val pictureOfDayEntity = pictureOfDay.asDatabaseModel()
+                asteroidDao.insert(pictureOfDayEntity)
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+        }
     }
 }

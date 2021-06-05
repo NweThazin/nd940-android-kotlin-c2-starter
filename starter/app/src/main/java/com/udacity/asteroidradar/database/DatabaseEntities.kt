@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.udacity.asteroidradar.domain.Asteroid
+import com.udacity.asteroidradar.domain.PictureOfDay
 
 @Entity(tableName = "asteroid_entity")
 data class AsteroidEntity(
@@ -53,4 +54,31 @@ fun List<Asteroid>.asDatabaseModel(): List<AsteroidEntity> {
             isPotentiallyHazardous = it.isPotentiallyHazardous
         )
     }
+}
+
+@Entity(tableName = "picture_of_day_entity")
+data class PictureOfDayEntity(
+    @ColumnInfo(name = "media_type")
+    val mediaType: String,
+    @PrimaryKey
+    @ColumnInfo(name = "title")
+    val title: String,
+    @ColumnInfo(name = "url")
+    val url: String
+)
+
+fun PictureOfDayEntity.asDomainModel(): PictureOfDay {
+    return PictureOfDay(
+        mediaType = mediaType,
+        title = title,
+        url = url
+    )
+}
+
+fun PictureOfDay.asDatabaseModel(): PictureOfDayEntity {
+    return PictureOfDayEntity(
+        mediaType = mediaType,
+        title = title,
+        url = url
+    )
 }

@@ -49,7 +49,10 @@ class MainFragment : Fragment(), AsteroidRadarAdapter.OnClickListener {
 
     private fun observeLiveData() {
         viewModel.asteroids.observe(viewLifecycleOwner, Observer { items ->
-            adapter.submitList(items)
+            if (!items.isNullOrEmpty()) {
+                viewModel.updateApiStatus(MainViewModel.ApiStatus.SUCCESS)
+                adapter.submitList(items)
+            }
         })
     }
 

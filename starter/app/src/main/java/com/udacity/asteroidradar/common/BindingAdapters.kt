@@ -47,7 +47,7 @@ fun bindPictureOfDay(imageView: ImageView, url: String?) {
     url?.let { newUrl ->
         Picasso.get()
             .load(newUrl)
-            .placeholder(R.drawable.placeholder_picture_of_day)
+            .placeholder(R.drawable.loading_animation)
             .error(R.drawable.placeholder_picture_of_day)
             .into(imageView)
     }

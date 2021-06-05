@@ -28,8 +28,29 @@ class MainViewModel(
     private val _apiStatus = MutableLiveData<ApiStatus>()
     val apiStatus: LiveData<ApiStatus> = _apiStatus
 
-    val asteroids: LiveData<List<Asteroid>> =
-        repository.getAsteroidsFromLocal(getTodayDate(), getEndDate())
+    private var _filterMenuItem = MutableLiveData<FilterMenuItem>()
+    val filterMenuItem: LiveData<FilterMenuItem> = _filterMenuItem
+
+    val asteroidsByFilter: LiveData<List<Asteroid>> =
+        Transformations.switchMap<FilterMenuItem, List<Asteroid>>(filterMenuItem) {
+            when (it) {
+                FilterMenuItem.TODAY -> {
+                    repository.getTodayAsteroids(getTodayDate())
+                }
+                FilterMenuItem.SAVED -> {
+                    repository.getSavedAsteroids()
+                }
+                FilterMenuItem.WEEK -> {
+                    repository.getWeekAsteroids(getTodayDate(), getEndDate())
+                }
+                else -> {
+                    repository.getAsteroidsFromLocal(getTodayDate())
+                }
+            }
+        }
+
+    val defaultAsteroids: LiveData<List<Asteroid>> =
+        repository.getAsteroidsFromLocal(getTodayDate())
 
     fun fetchAsteroids() {
         updateApiStatus(ApiStatus.LOADING)
@@ -65,6 +86,10 @@ class MainViewModel(
         }
     }
 
+    fun onMenuItemSelected(item: FilterMenuItem?) {
+        _filterMenuItem.postValue(item)
+    }
+
     class ViewModelFactory(
         private val application: Application,
         private val dao: AsteroidDatabaseDao
@@ -76,5 +101,11 @@ class MainViewModel(
             throw IllegalArgumentException("Unable to construct view model")
         }
 
+    }
+
+    enum class FilterMenuItem {
+        WEEK,
+        TODAY,
+        SAVED
     }
 }

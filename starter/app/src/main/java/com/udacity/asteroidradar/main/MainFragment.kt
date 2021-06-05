@@ -48,12 +48,19 @@ class MainFragment : Fragment(), AsteroidRadarAdapter.OnClickListener {
     }
 
     private fun observeLiveData() {
-        viewModel.asteroids.observe(viewLifecycleOwner, Observer { items ->
-            if (!items.isNullOrEmpty()) {
-                viewModel.updateApiStatus(MainViewModel.ApiStatus.SUCCESS)
-                adapter.submitList(items)
-            }
-        })
+        viewModel.defaultAsteroids.observe(
+            viewLifecycleOwner,
+            Observer { items -> updateAdapterList(items) })
+        viewModel.asteroidsByFilter.observe(
+            viewLifecycleOwner,
+            Observer { items -> updateAdapterList(items) })
+    }
+
+    private fun updateAdapterList(items: List<Asteroid>?) {
+        if (!items.isNullOrEmpty()) {
+            viewModel.updateApiStatus(MainViewModel.ApiStatus.SUCCESS)
+            adapter.submitList(items)
+        }
     }
 
     private fun loadAsteroids() {
@@ -67,6 +74,13 @@ class MainFragment : Fragment(), AsteroidRadarAdapter.OnClickListener {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val filterMenuItem = when (item.itemId) {
+            R.id.show_week_menu -> MainViewModel.FilterMenuItem.WEEK
+            R.id.show_today_menu -> MainViewModel.FilterMenuItem.TODAY
+            R.id.show_saved_menu -> MainViewModel.FilterMenuItem.SAVED
+            else -> null
+        }
+        viewModel.onMenuItemSelected(filterMenuItem)
         return true
     }
 

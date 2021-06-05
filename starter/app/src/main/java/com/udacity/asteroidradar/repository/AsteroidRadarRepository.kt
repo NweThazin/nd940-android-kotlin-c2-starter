@@ -17,9 +17,33 @@ import java.lang.Exception
 
 class AsteroidRadarRepository(private val asteroidDao: AsteroidDatabaseDao) {
 
-    fun getAsteroidsFromLocal(startDate: String, endDate: String): LiveData<List<Asteroid>> {
-        return Transformations.map(asteroidDao.getAllAsteroids()) {
+    fun getAsteroidsFromLocal(startDate: String): LiveData<List<Asteroid>> {
+        return Transformations.map(asteroidDao.getAsteroids(startDate)) {
             it.asDomainModel()
+        }
+    }
+
+    fun getTodayAsteroids(today: String): LiveData<List<Asteroid>> {
+        return Transformations.map(asteroidDao.getTodayAsteroids(today)) { items ->
+            items?.let {
+                it.asDomainModel()
+            }
+        }
+    }
+
+    fun getSavedAsteroids(): LiveData<List<Asteroid>> {
+        return Transformations.map(asteroidDao.getSavedAsteroids()) { items ->
+            items?.let {
+                it.asDomainModel()
+            }
+        }
+    }
+
+    fun getWeekAsteroids(startDate: String, endDate: String): LiveData<List<Asteroid>> {
+        return Transformations.map(asteroidDao.getWeekAsteroids(startDate, endDate)) { items ->
+            items?.let {
+                it.asDomainModel()
+            }
         }
     }
 

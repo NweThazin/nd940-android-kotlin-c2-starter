@@ -3,6 +3,7 @@ package com.udacity.asteroidradar.main
 import android.app.Application
 import androidx.lifecycle.*
 import com.udacity.asteroidradar.common.Constants
+import com.udacity.asteroidradar.common.DateTimeUtil
 import com.udacity.asteroidradar.database.AsteroidDatabaseDao
 import com.udacity.asteroidradar.domain.Asteroid
 import com.udacity.asteroidradar.domain.PictureOfDay
@@ -35,44 +36,33 @@ class MainViewModel(
         Transformations.switchMap<FilterMenuItem, List<Asteroid>>(filterMenuItem) {
             when (it) {
                 FilterMenuItem.TODAY -> {
-                    repository.getTodayAsteroids(getTodayDate())
+                    repository.getTodayAsteroids(DateTimeUtil.getTodayDate())
                 }
                 FilterMenuItem.SAVED -> {
                     repository.getSavedAsteroids()
                 }
                 FilterMenuItem.WEEK -> {
-                    repository.getWeekAsteroids(getTodayDate(), getEndDate())
+                    repository.getWeekAsteroids(
+                        DateTimeUtil.getTodayDate(),
+                        DateTimeUtil.getEndDate()
+                    )
                 }
                 else -> {
-                    repository.getAsteroidsFromLocal(getTodayDate())
+                    repository.getAsteroidsFromLocal(DateTimeUtil.getTodayDate())
                 }
             }
         }
 
     val defaultAsteroids: LiveData<List<Asteroid>> =
-        repository.getAsteroidsFromLocal(getTodayDate())
+        repository.getAsteroidsFromLocal(DateTimeUtil.getTodayDate())
 
     fun fetchAsteroids() {
         updateApiStatus(ApiStatus.LOADING)
         viewModelScope.launch {
-            repository.getAsteroids(getTodayDate(), getEndDate()) {
+            repository.getAsteroids(DateTimeUtil.getTodayDate(), DateTimeUtil.getEndDate()) {
                 updateApiStatus(ApiStatus.ERROR)
             }
         }
-    }
-
-    private fun getTodayDate(): String {
-        val currentTime = Calendar.getInstance().time
-        val format = SimpleDateFormat(Constants.API_QUERY_DATE_FORMAT, Locale.getDefault())
-        return format.format(currentTime)
-    }
-
-    private fun getEndDate(): String {
-        val calendar = Calendar.getInstance()
-        calendar.add(Calendar.DAY_OF_YEAR, Constants.DEFAULT_END_DATE_DAYS)
-        val format = SimpleDateFormat(Constants.API_QUERY_DATE_FORMAT, Locale.getDefault())
-        return format.format(calendar.time)
-
     }
 
     fun updateApiStatus(apiStatus: ApiStatus) {

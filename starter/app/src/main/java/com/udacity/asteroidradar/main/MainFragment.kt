@@ -6,15 +6,21 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.udacity.asteroidradar.R
+import com.udacity.asteroidradar.database.AsteroidDatabase
 import com.udacity.asteroidradar.databinding.FragmentMainBinding
 import com.udacity.asteroidradar.domain.Asteroid
 
 class MainFragment : Fragment(), AsteroidRadarAdapter.OnClickListener {
 
     private val viewModel: MainViewModel by lazy {
-        ViewModelProvider(this).get(MainViewModel::class.java)
+        ViewModelProvider(
+            this,
+            MainViewModel.ViewModelFactory(
+                requireActivity().application,
+                AsteroidDatabase.getInstance(requireContext()).asteroidDao
+            )
+        ).get(MainViewModel::class.java)
     }
 
     private lateinit var adapter: AsteroidRadarAdapter
@@ -49,6 +55,7 @@ class MainFragment : Fragment(), AsteroidRadarAdapter.OnClickListener {
 
     private fun loadAsteroids() {
         viewModel.fetchAsteroids()
+        viewModel.fetchPhotoOfDay()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
